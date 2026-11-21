@@ -23,28 +23,36 @@ export function drawCover(canvas, photo, captionText, gridSize = 4, cw, ch) {
   const offsetY = (coveredH - h) / 2;
 
   const gradient = ctx.createLinearGradient(0, 0, 0, h);
-  gradient.addColorStop(0, 'rgba(66, 0, 130, 0.8)');
-  gradient.addColorStop(0.5, 'rgba(255, 105, 180, 0.6)');
-  gradient.addColorStop(1, 'rgba(255, 69, 0, 0.8)');
+  gradient.addColorStop(0, 'rgba(66, 0, 130, 0.45)');
+  gradient.addColorStop(0.5, 'rgba(255, 105, 180, 0.35)');
+  gradient.addColorStop(1, 'rgba(255, 69, 0, 0.45)');
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, w, h);
 
   const layout = GRID_LAYOUTS[gridSize] || GRID_LAYOUTS[4];
   const { rows, cols, skip } = layout;
-  const panelW = coveredW / cols;
-  const panelH = coveredH / rows;
+  const panelW = w / cols;
+  const panelH = h / rows;
 
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
       const idx = r * cols + c;
       if (skip && skip.includes(idx)) continue;
 
-      const sx = offsetX + c * panelW;
-      const sy = offsetY + r * panelH;
-      ctx.drawImage(photo, sx, sy, panelW, panelH, c * panelW, r * panelH, panelW, panelH);
+      // cover-fit the photo into each panel: crop a centered window of the image
+      const pScale = Math.max(panelW / photo.naturalWidth, panelH / photo.naturalHeight);
+      const pW = photo.naturalWidth * pScale;
+      const pH = photo.naturalHeight * pScale;
+      // shift the crop per panel so panels differ slightly
+      const shift = (idx % 3) * 0.12;
+      const sx = Math.min((pW - panelW / pScale) * (0.5 + shift - 0.12), Math.max(0, pW - panelW / pScale));
+      const sy = Math.min((pH - panelH / pScale) * (0.4 + shift * 0.5), Math.max(0, pH - panelH / pScale));
+      ctx.drawImage(photo, sx, sy, panelW / pScale, panelH / pScale, c * panelW, r * panelH, panelW, panelH);
     }
   }
 
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, w, h);
   addGrain(ctx, w, h);
 
   drawCaption(ctx, captionText, w, h);

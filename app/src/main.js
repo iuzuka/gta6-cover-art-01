@@ -66,7 +66,7 @@ if (shot) {
 } else {
   const defaultImg = new Image();
   defaultImg.src = './samples/pier.jpg';
-  defaultImg.onload = () => {
+  defaultImg.onload = async () => {
     photo = await loadImage(defaultImg.src);
     redraw();
   };
