@@ -1,35 +1,80 @@
-// Draws the cover: the photo filling the square, a sunset tint rising from the bottom, and the caption in bold
-// white capitals along the foot.
+export const GRID_LAYOUTS = {
+  3: { rows: 2, cols: 2, skip: [3] },
+  4: { rows: 2, cols: 2 },
+  5: { rows: 2, cols: 3 },
+  6: { rows: 2, cols: 3 }
+};
 
-/** Draws `photo` (an image, or null) and `caption` onto the canvas's 2D context, at the canvas's own size. */
-export function drawCover(canvas, photo, caption) {
+export function drawCover(canvas, photo, captionText, gridSize = 4, cw, ch) {
   const ctx = canvas.getContext('2d');
-  const { width: w, height: h } = canvas;
-  ctx.fillStyle = '#2b1838';
-  ctx.fillRect(0, 0, w, h);
-  if (photo) {
-    const scale = Math.max(w / photo.naturalWidth, h / photo.naturalHeight);
-    const pw = photo.naturalWidth * scale;
-    const ph = photo.naturalHeight * scale;
-    ctx.drawImage(photo, (w - pw) / 2, (h - ph) / 2, pw, ph);
+  const w = cw || canvas.width;
+  const h = ch || canvas.height;
+
+  if (!photo) {
+    ctx.fillStyle = '#0d0a15';
+    ctx.fillRect(0, 0, w, h);
+    return;
   }
-  const tint = ctx.createLinearGradient(0, h * 0.35, 0, h);
-  tint.addColorStop(0, 'rgba(255, 120, 80, 0)');
-  tint.addColorStop(1, 'rgba(200, 40, 120, 0.65)');
-  ctx.fillStyle = tint;
+
+  const scale = Math.max(w / photo.naturalWidth, h / photo.naturalHeight);
+  const coveredW = photo.naturalWidth * scale;
+  const coveredH = photo.naturalHeight * scale;
+  const offsetX = (coveredW - w) / 2;
+  const offsetY = (coveredH - h) / 2;
+
+  const gradient = ctx.createLinearGradient(0, 0, 0, h);
+  gradient.addColorStop(0, 'rgba(66, 0, 130, 0.8)');
+  gradient.addColorStop(0.5, 'rgba(255, 105, 180, 0.6)');
+  gradient.addColorStop(1, 'rgba(255, 69, 0, 0.8)');
+  ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, w, h);
-  const text = caption.trim().toUpperCase();
-  if (!text) return;
-  let size = h * 0.12;
-  ctx.font = `bold ${size}px sans-serif`;
-  while (ctx.measureText(text).width > w * 0.9 && size > 12) {
-    size -= 2;
-    ctx.font = `bold ${size}px sans-serif`;
+
+  const layout = GRID_LAYOUTS[gridSize] || GRID_LAYOUTS[4];
+  const { rows, cols, skip } = layout;
+  const panelW = coveredW / cols;
+  const panelH = coveredH / rows;
+
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const idx = r * cols + c;
+      if (skip && skip.includes(idx)) continue;
+
+      const sx = offsetX + c * panelW;
+      const sy = offsetY + r * panelH;
+      ctx.drawImage(photo, sx, sy, panelW, panelH, c * panelW, r * panelH, panelW, panelH);
+    }
   }
+
+  addGrain(ctx, w, h);
+
+  drawCaption(ctx, captionText, w, h);
+}
+
+export function addGrain(ctx, w, h) {
+  const imageData = ctx.getImageData(0, 0, w, h);
+  const data = imageData.data;
+  for (let i = 0; i < data.length; i += 4) {
+    const noise = (Math.random() - 0.5) * 12;
+    data[i] = Math.min(255, Math.max(0, data[i] + noise));
+    data[i + 1] = Math.min(255, Math.max(0, data[i + 1] + noise));
+    data[i + 2] = Math.min(255, Math.max(0, data[i + 2] + noise));
+    data[i + 3] = 255;
+  }
+  ctx.putImageData(imageData, 0, 0);
+}
+
+export function drawCaption(ctx, text, w, h) {
+  const t = text.trim().toUpperCase();
+  if (!t) return;
+
+  ctx.font = 'bold 120px sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillStyle = '#ffffff';
-  ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
-  ctx.shadowBlur = size * 0.2;
-  ctx.fillText(text, w / 2, h - h * 0.07);
-  ctx.shadowBlur = 0;
+  ctx.textBaseline = 'top';
+
+  ctx.strokeStyle = 'rgba(0, 0, 0, 0.8)';
+  ctx.lineWidth = 4;
+  ctx.strokeText(t, w / 2, 20);
+
+  ctx.fillStyle = '#fff';
+  ctx.fillText(t, w / 2, 20);
 }

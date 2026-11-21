@@ -3,17 +3,24 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Cover Snap</title>
+<title>GTA 6 Cover Art Maker</title>
 <link rel="stylesheet" href="./style.css">
 </head>
 <body>
 <main class="app">
   <section class="controls">
     <h1>Cover Snap</h1>
-    <p>A photo and a caption, made into a square cover.</p>
+    <p>GTA-style multi-panel cover art</p>
     <label>Photo <input id="photo" type="file" accept="image/*"></label>
     <label>Caption <input id="caption" type="text" maxlength="40" value="Sunset Heist"></label>
-    <button id="export" type="button">Export PNG 1080 x 1080</button>
+    <label>Size
+      <select id="size">
+        <option value="1080x1080">1080 x 1080</option>
+        <option value="1080x1350">1080 x 1350</option>
+        <option value="1920x1080" selected>1920 x 1080</option>
+      </select>
+    </label>
+    <button id="export" type="button">Export PNG</button>
     <p id="status" role="status"></p>
   </section>
   <canvas id="cover" width="1080" height="1080" aria-label="The cover"></canvas>
